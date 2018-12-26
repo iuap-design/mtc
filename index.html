@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>web端示例</title>
+    <link rel="stylesheet" href="index.css">
+    <script src="https://design.yonyoucloud.com/static/jquery/3.2.1/jquery.min.js"></script>
+    <script src="https://design.yonyoucloud.com/static/mtc/mtc-web-dev.js"></script>
+</head>
+<body style='text-align:center'>
+    <!--登陆-->
+<div class='yyim-iogin'>
+    <h3 class='login-tit'>用户登陆</h3>
+    <p class='login-desc'>请输入您的用户名和密码</p>
+    <label><input class='login-username' id='userId' value='liusz' type='text' placeholder='输入用户名'></label>
+    <label><input class='login-username' id='password' value='123456' type='text' placeholder='输入密码'></label>
+    <button class='login-btn' id='loginBtn'>登陆</button>
+</div>
+
+<div class='content' style='display:none'>
+        <button id='getMyInfo'>获得我的信息</button>
+        <button id='getBindDevices'>获得设备列表</button>
+        <br/>
+        <button id='bind'>绑定我的手机</button><button id='delBind'>删除绑定</button>
+        <br/>
+        <button do='location' class='order-btn'>定位</button>
+        <button do='start-location' class='order-btn'>开始定位</button>
+        <button do='stop-location' class='order-btn'>停止定位</button>
+        <button do='camera' class='order-btn'>相机</button>
+        <!-- <button do='fingerprint' class='order-btn'>指纹</button>
+        <button do='invoice' class='order-btn'>发票识别</button>
+        <button do='id' class='order-btn'>身份证识别</button>
+        <button do='bankCard' class='order-btn'>银行卡识别</button>
+        <button do='autograph' class='order-btn'>签名认证</button>
+        <button do='faceReg' class='order-btn'>人脸注册</button>
+        <button do='faceRec' class='order-btn'>人脸识别</button>
+        <button do='voice' class='order-btn'>语音</button>
+        <button do='print' class='order-btn'>打印</button>
+        <button do='file' class='order-btn'>文件共享</button> -->
+        <input type='text' value='17600056834' id='phoneValue' placeholder='请输入电话号码'> 
+        <button do='call' class='order-btn'>打电话</button>
+        <button do='message' class='order-btn'>发短信</button>
+        <br/>
+        <div>我的设备信息：<div class='my-info'></div></div>
+        
+        
+        
+        <div>绑定的设备：<div class='bind-devices'></div></div>
+        
+        <div>命令反馈:<div id='message'></div></div>
+        
+
+</div>
+
+</body>
+<script>
+    let mtcWeb = new MTCWeb({
+            config: {
+                userId:$('#userId').val(),
+                password:$('#password').val(),
+                etp: 'yonyou',
+                app: 'mttest02',
+                appSecret: 'e92a0a36e68e4e21bf0c78aecc4ebe79',
+                diviceId:'diviceId',
+                nickName:'myName',
+            },
+            onLogin:res=>{//登陆成功回调
+                $('.yyim-iogin').hide();
+                $('.content').show();
+            },
+            onOpened:res=>{
+                console.log('index.html onOpened回调',res);
+            },
+            onMessage:res=>{//收到消息
+                console.log('index.html onMessage回调',res);
+            },
+            onError:error=>{//错误
+                console.log('index.html onError回调',error);
+            },
+            onClose:res=>{//关闭
+                console.log('index.html onClose回调',res);
+            },
+    });
+    $('#loginBtn').on('click',function(){
+        mtcWeb.login();
+    })
+
+    $('#getBindDevices').on('click',function(){
+        mtcWeb.getBindDevices({
+            'bindingType':2, //0被申请绑定，1申请绑定, 2 All
+            'clientIdentify':'',
+            'startIndex':0,
+            'pageSize':100
+        },(res)=>{
+            console.log('index.html 获得绑定设备回调',res);
+            $('.bind-devices').html(
+                '<pre>'+JSON.stringify(res)+'</pre>'
+            )
+        })
+    })
+    $('#getMyInfo').on('click',function(){
+        mtcWeb.getMyInfo({
+            'startIndex':0,
+            'pageSize':100
+        },(res)=>{
+            console.log('index.html 获得我的信息回调',res)
+            $('.my-info').html(
+                '<pre>'+JSON.stringify(res[0])+'</pre>'
+            )
+        })
+    })
+
+    let bindUserId = 'liusz';
+    let bindClientIdentify = 'AB324436-8BA9-4A2A-8F79-2EF86531E60F';
+    $('#bind').on('click',function(){
+        mtcWeb.bindDevices({
+            appId:'mttest02',
+            clientIdentify:bindClientIdentify,
+            userId:bindUserId,
+            allPermissions:0,
+            permissions:[]
+        },(res)=>{
+            console.log('index.html 绑定设备回调',res)
+        })
+    })
+    $('#delBind').on('click',function(){
+        mtcWeb.delDevices({
+            appId:'mttest02',
+            clientIdentify:bindClientIdentify,
+            userId:bindUserId
+        },(res)=>{
+            console.log('index.html 绑定设备回调',res)
+        })
+    })
+
+    $('.order-btn').on('click',function(){
+        let common = {};
+        switch ($(this).attr('do')){
+            case 'location'://定位
+                common = {
+                    commandType:'MTL_CMD_LOCATION',
+                    response:0,
+                    commandParams:{
+                        type:'once',//once 定位一次，always 一直定位，stop停止定位
+                        interval:''//type为always时该参数有效，定位时间间隔，单位/秒，默认60s
+                    }
+                }
+            break;
+            case 'start-location'://开始定位
+                common = {
+                    commandType:'MTL_CMD_LOCATION',
+                    response:0,
+                    commandParams:{
+                        type:'always',//once 定位一次，always 一直定位，stop停止定位
+                        interval:'2'//type为always时该参数有效，定位时间间隔，单位/秒，默认60s
+                    }
+                }
+            break;
+            case 'stop-location'://停止定位
+                common = {
+                    commandType:'MTL_CMD_LOCATION',
+                    response:0,
+                    commandParams:{
+                        type:'stop',//once 定位一次，always 一直定位，stop停止定位
+                        interval:'2'//type为always时该参数有效，定位时间间隔，单位/秒，默认60s
+                    }
+                }
+            break;
+            case 'camera'://相机
+                common = {
+                    commandType:'MTL_CMD_CAMERA',
+                    response:0,
+                    commandParams:{
+                        // 'type':'photo',//photo 相册，camera相机，不传则弹出选择框
+                    }
+                }
+            break;
+            case 'fingerprint'://指纹
+                common = {
+                    commandType:'MTL_CMD_FINGERPRINT',
+                    response:0,
+                    commandParams:{
+                       
+                    }
+                }
+            break;
+            case 'invoice'://发票识别
+                common = {
+                    commandType:'MTL_CMD_OCR',
+                    response:0,
+                    commandParams:{
+                        type:'',
+                        appCode:''//在阿里云申请的appCode            
+                    }
+                }
+            break;
+            case 'id'://身份证识别
+                common = {
+                    commandType:'MTL_CMD_OCR',
+                    response:0,
+                    commandParams:{
+                        type:'',
+                        appCode:'',	//在阿里云申请的appCode,地址
+                        side:'',//face 正面 back 反面
+                    }
+                }
+            break;
+            case 'bankCard'://银行卡识别
+                common = {
+                    commandType:'MTL_CMD_OCR',
+                    response:0,
+                    commandParams:{
+                        type:'',
+                        appCode:''//在阿里云申请的appCode     
+                    }
+                }
+            break;
+            case 'autograph'://签名验证
+                common = {
+                    commandType:'MTL_CMD_SIGNATURE',
+                    response:0,
+                    commandParams:{
+                       
+                    }
+                }
+            break;
+            case 'faceReg'://百度人脸注册
+                common = {
+                    commandType:'MTL_CMD_BD_FACE',
+                    response:0,
+                    commandParams:{
+                        appKey:'',//	在百度申请的appKey
+                        secretKey:'',//	在百度申请的secretKey
+                        type:'',//	register
+                        userName:'',//	注册人脸的用户名
+                        groupId:'',//	人脸注册到的组别Id
+                    }
+                }
+            break;
+            case 'faceRec'://百度人脸识别
+                common = {
+                    commandType:'MTL_CMD_BD_FACE',
+                    response:0,
+                    commandParams:{
+                        appKey:'',//	在百度申请的appKey
+                        secretKey:'',//	在百度申请的secretKey
+                        type:'',//	register
+                        userName:'',//	注册人脸的用户名
+                        groupId:'',//	人脸注册到的组别Id
+                    }
+                }
+            break;
+            case 'voice'://百度语音
+                common = {
+                    commandType:'MTL_CMD_BD_VOICE',
+                    response:0,
+                    commandParams:{
+                        appKey:'',//	在百度申请的appKey
+                        secretKey:'',//	在百度申请的secretKey
+                        groupId:'',//	人脸注册到的组别Id
+                    }
+                }
+            break;
+            case 'print'://打印插件
+                common = {
+                    commandType:'MTL_CMD_PRINTER',
+                    response:0,
+                    commandParams:{
+                        boxId:'',//	用友魔盒的盒子ID
+                        boxName:'',//	用友魔盒的盒子名称
+                        imageType:'',//	图片类型，png、jpg等
+                        image:'',//	图片
+                        url:'',//	打印的服务地址
+                    }
+                }
+            break;
+            case 'file'://文件共享
+                common = {
+                    commandType:'MTL_CMD_FILESHARE',
+                    response:0,
+                    commandParams:{
+                       
+                    }
+                }
+            break;
+            case 'call'://打电话
+                common = {
+                    commandType:'MTL_CMD_TELEPHONE',
+                    response:0,
+                    commandParams:{
+                        phoneNumber:$('#phoneValue').val()
+                    }
+                }
+            break;
+            case 'message'://发短信
+                common = {
+                    commandType:'MTL_CMD_SMS',
+                    response:0,
+                    commandParams:{
+                        phoneNumber:$('#phoneValue').val(),
+                        smsText:'短信内容'
+                    }
+                }
+            break;
+            
+        }
+
+        mtcWeb.sendOrder(Object.assign({
+            appId:'mttest02',
+            clientIdentify:bindClientIdentify,
+            userId:bindUserId
+        },common),(res)=>{
+            console.log('index.html 发送命令回调',res);
+        },(res)=>{
+            console.log('命令的结果   ', res);
+            let str = '<pre>'+JSON.stringify(res)+'</pre>';
+            if(res.type=='image')str = '<image src="'+res.url+'"/>';
+            $('#message').html(str)
+        })
+    })
+</script>
+</html>
+
+
